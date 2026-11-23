@@ -2,51 +2,144 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>홈트 음성 타이머</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Home PT</title>
 
 <style>
+:root{
+    --bg:#f6f7fb;
+    --card:#ffffff;
+    --text:#1c1c1e;
+    --primary:#0a84ff;
+    --border:#e5e5ea;
+    --success:#34c759;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+}
+
 body{
-    font-family: Arial, sans-serif;
-    background:#f4f4f4;
-    text-align:center;
-    padding:30px;
+    background:var(--bg);
+    color:var(--text);
+    padding:20px;
 }
 
 .container{
-    background:white;
-    max-width:400px;
+    max-width:700px;
     margin:auto;
-    padding:20px;
-    border-radius:15px;
-    box-shadow:0 0 10px rgba(0,0,0,0.15);
 }
 
-input{
-    width:90%;
+h1{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.card{
+    background:var(--card);
+    border-radius:16px;
+    padding:16px;
+    margin-bottom:16px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+input,select{
+    width:100%;
     padding:10px;
-    margin:10px;
-    font-size:18px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    margin-top:5px;
+}
+
+.row{
+    display:flex;
+    gap:10px;
+    margin-top:10px;
+}
+
+.row>div{
+    flex:1;
 }
 
 button{
-    padding:12px 25px;
-    font-size:18px;
-    background:#007AFF;
-    color:white;
     border:none;
-    border-radius:10px;
+    border-radius:12px;
+    padding:12px;
     cursor:pointer;
-}
-
-button:hover{
-    background:#005fcc;
-}
-
-#status{
-    margin-top:20px;
-    font-size:28px;
     font-weight:bold;
+}
+
+.primary{
+    background:var(--primary);
+    color:white;
+    width:100%;
+}
+
+.secondary{
+    background:#ececec;
+    width:100%;
+}
+
+.exercise{
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px;
+    margin-top:10px;
+}
+
+#workoutArea{
+    text-align:center;
+    display:none;
+}
+
+#exerciseName{
+    font-size:32px;
+    font-weight:700;
+}
+
+#counter{
+    font-size:64px;
+    margin:20px 0;
+}
+
+#setInfo{
+    font-size:20px;
+}
+
+.progress{
+    width:100%;
+    height:20px;
+    background:#e5e5ea;
+    border-radius:12px;
+    overflow:hidden;
+    margin-top:15px;
+}
+
+.progress-bar{
+    height:100%;
+    width:0%;
+    background:var(--success);
+    transition:.3s;
+}
+
+#challenge{
+    margin-top:15px;
+    font-size:28px;
+    color:#ff3b30;
+    font-weight:700;
+}
+
+@media (prefers-color-scheme: dark){
+    :root{
+        --bg:#000;
+        --card:#1c1c1e;
+        --text:#fff;
+        --border:#333;
+    }
 }
 </style>
 </head>
@@ -55,23 +148,149 @@ button:hover{
 
 <div class="container">
 
-<h2>🏋️ 홈트 음성 타이머</h2>
+<h1>🏋️ HOME PT</h1>
 
-<input id="exercise" value="스쿼트">
+<div class="card">
 
-<input id="count" type="number" value="20">
+<label>루틴명</label>
+<input id="routineName" value="하체 루틴">
+
+<div class="row">
+<div>
+<label>세트 수</label>
+<input id="setCount" type="number" value="3">
+</div>
+
+<div>
+<label>챌린지 확률(%)</label>
+<input id="challengeRate" type="number" value="30">
+</div>
+</div>
 
 <br>
 
-<button onclick="startWorkout()">시작</button>
+<button class="secondary" onclick="addExercise()">
++ 운동 추가
+</button>
 
-<div id="status">준비</div>
+<div id="exerciseList"></div>
+
+<br>
+
+<button class="secondary" onclick="saveRoutine()">
+루틴 저장
+</button>
+
+<br><br>
+
+<button class="primary" onclick="startWorkout()">
+운동 시작
+</button>
 
 </div>
 
+
+
+<div id="workoutArea" class="card">
+
+<div id="exerciseName">준비</div>
+
+<div id="counter">0</div>
+
+<div id="setInfo"></div>
+
+<div class="progress">
+<div class="progress-bar" id="progressBar"></div>
+</div>
+
+<div id="challenge"></div>
+
+</div>
+
+</div>
+
+
 <script>
 
-const numbers = [
+const speech = window.speechSynthesis;
+
+let routine=[];
+let currentSet=1;
+
+function speak(text){
+    let msg=new SpeechSynthesisUtterance(text);
+    msg.lang='ko-KR';
+    speech.speak(msg);
+}
+
+function addExercise(){
+
+const div=document.createElement('div');
+
+div.className="exercise";
+
+div.innerHTML=`
+<div class="row">
+
+<div>
+<label>운동명</label>
+<input class="name" value="스쿼트">
+</div>
+
+<div>
+<label>횟수</label>
+<input class="count" type="number" value="20">
+</div>
+
+</div>
+
+<div class="row">
+
+<div>
+<label>간격(초)</label>
+<input class="interval" type="number" step="0.1" value="1.0">
+</div>
+
+<div>
+<label>휴식(초)</label>
+<input class="rest" type="number" value="10">
+</div>
+
+</div>
+`;
+
+document.getElementById('exerciseList').appendChild(div);
+
+}
+
+addExercise();
+
+function saveRoutine(){
+
+localStorage.setItem(
+'homept',
+document.getElementById('exerciseList').innerHTML
+);
+
+alert("저장 완료");
+
+}
+
+window.onload=()=>{
+
+const saved=localStorage.getItem("homept");
+
+if(saved){
+
+document.getElementById('exerciseList').innerHTML=saved;
+
+}
+
+};
+
+function koreanNumber(n){
+
+const arr=[
 "",
 "하나","둘","셋","넷","다섯",
 "여섯","일곱","여덟","아홉","열",
@@ -81,61 +300,139 @@ const numbers = [
 "스물여섯","스물일곱","스물여덟","스물아홉","서른"
 ];
 
-function speak(text){
+return arr[n]||n.toString();
 
-    let utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "ko-KR";
-
-    speechSynthesis.speak(utterance);
 }
 
-function startWorkout(){
+async function wait(ms){
 
-    speechSynthesis.cancel();
+return new Promise(resolve=>setTimeout(resolve,ms));
 
-    const exercise =
-        document.getElementById("exercise").value;
+}
 
-    const count =
-        parseInt(document.getElementById("count").value);
+async function startWorkout(){
 
-    document.getElementById("status").innerHTML =
-        exercise + " 시작";
+speech.cancel();
 
-    speak(exercise + " " + count + "회 시작");
+document.getElementById('workoutArea').style.display='block';
 
-    let current = 1;
+routine=[];
 
-    setTimeout(() => {
+document.querySelectorAll('.exercise').forEach(item=>{
 
-        const timer = setInterval(() => {
+routine.push({
 
-            if(current <= count){
+name:item.querySelector('.name').value,
+count:parseInt(item.querySelector('.count').value),
+interval:parseFloat(item.querySelector('.interval').value),
+rest:parseInt(item.querySelector('.rest').value)
 
-                let text =
-                    numbers[current] || current.toString();
+});
 
-                document.getElementById("status").innerHTML =
-                    text;
+});
 
-                speak(text);
+let sets=parseInt(
+document.getElementById('setCount').value
+);
 
-                current++;
+let challengeRate=parseInt(
+document.getElementById('challengeRate').value
+);
 
-            }else{
+for(let set=1; set<=sets; set++){
 
-                clearInterval(timer);
+currentSet=set;
 
-                document.getElementById("status").innerHTML =
-                    "완료";
+speak(`${set} 세트 시작`);
 
-                speak(exercise + " 완료");
+for(let ex of routine){
 
-            }
+await runExercise(ex,sets,challengeRate);
 
-        },1000);
+}
 
-    },2000);
+speak(`${set} 세트 완료`);
+
+}
+
+speak("오늘 운동이 모두 종료되었습니다.");
+
+alert("운동 완료!");
+
+}
+
+async function runExercise(ex,totalSets,challengeRate){
+
+const exerciseName=document.getElementById("exerciseName");
+const counter=document.getElementById("counter");
+const progress=document.getElementById("progressBar");
+const setInfo=document.getElementById("setInfo");
+
+exerciseName.innerText=ex.name;
+
+setInfo.innerText=
+`${currentSet} / ${totalSets} 세트`;
+
+counter.innerText="준비";
+
+speak(`${ex.name} 시작`);
+
+await wait(2000);
+
+for(let i=1;i<=ex.count;i++){
+
+counter.innerText=
+`${i} / ${ex.count}`;
+
+progress.style.width=
+(i/ex.count*100)+"%";
+
+speak(koreanNumber(i));
+
+await wait(ex.interval*1000);
+
+}
+
+if(Math.random()*100 < challengeRate){
+
+let bonus=
+Math.floor(Math.random()*5)+1;
+
+document.getElementById('challenge').innerText=
+`🔥 챌린지 +${bonus}`;
+
+speak(`챌린지 발생`);
+await wait(1500);
+
+for(let i=1;i<=bonus;i++){
+
+counter.innerText=
+`보너스 ${i}/${bonus}`;
+
+speak(koreanNumber(i));
+
+await wait(ex.interval*1000);
+
+}
+
+document.getElementById('challenge').innerText="";
+
+}
+
+speak(`${ex.name} 완료`);
+
+counter.innerText="휴식";
+
+for(let i=ex.rest;i>=1;i--){
+
+counter.innerText=`휴식 ${i}`;
+
+speak(i.toString());
+
+await wait(1000);
+
+}
+
 }
 </script>
 
