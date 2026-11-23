@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>홈트 음성 타이머</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#f4f4f4;
+    text-align:center;
+    padding:30px;
+}
+
+.container{
+    background:white;
+    max-width:400px;
+    margin:auto;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 0 10px rgba(0,0,0,0.15);
+}
+
+input{
+    width:90%;
+    padding:10px;
+    margin:10px;
+    font-size:18px;
+}
+
+button{
+    padding:12px 25px;
+    font-size:18px;
+    background:#007AFF;
+    color:white;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#005fcc;
+}
+
+#status{
+    margin-top:20px;
+    font-size:28px;
+    font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>🏋️ 홈트 음성 타이머</h2>
+
+<input id="exercise" value="스쿼트">
+
+<input id="count" type="number" value="20">
+
+<br>
+
+<button onclick="startWorkout()">시작</button>
+
+<div id="status">준비</div>
+
+</div>
+
+<script>
+
+const numbers = [
+"",
+"하나","둘","셋","넷","다섯",
+"여섯","일곱","여덟","아홉","열",
+"열하나","열둘","열셋","열넷","열다섯",
+"열여섯","열일곱","열여덟","열아홉","스물",
+"스물하나","스물둘","스물셋","스물넷","스물다섯",
+"스물여섯","스물일곱","스물여덟","스물아홉","서른"
+];
+
+function speak(text){
+
+    let utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "ko-KR";
+
+    speechSynthesis.speak(utterance);
+}
+
+function startWorkout(){
+
+    speechSynthesis.cancel();
+
+    const exercise =
+        document.getElementById("exercise").value;
+
+    const count =
+        parseInt(document.getElementById("count").value);
+
+    document.getElementById("status").innerHTML =
+        exercise + " 시작";
+
+    speak(exercise + " " + count + "회 시작");
+
+    let current = 1;
+
+    setTimeout(() => {
+
+        const timer = setInterval(() => {
+
+            if(current <= count){
+
+                let text =
+                    numbers[current] || current.toString();
+
+                document.getElementById("status").innerHTML =
+                    text;
+
+                speak(text);
+
+                current++;
+
+            }else{
+
+                clearInterval(timer);
+
+                document.getElementById("status").innerHTML =
+                    "완료";
+
+                speak(exercise + " 완료");
+
+            }
+
+        },1000);
+
+    },2000);
+}
+</script>
+
+</body>
+</html>
